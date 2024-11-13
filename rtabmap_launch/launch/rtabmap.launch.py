@@ -65,7 +65,15 @@ def launch_setup(context, *args, **kwargs):
     
         SetParameter(name='use_sim_time', value=LaunchConfiguration('use_sim_time')),
         # 'use_sim_time' will be set on all nodes following the line above
-    
+
+        #transform form base_link to zed_camera_link
+        # Node(
+        #     package='tf2_ros',
+        #     executable='static_transform_publisher',
+        #     name='static_tf_pub_base_link_to_zed_camera_link',
+        #     arguments=['0.0', '0.0', '1.27', '0.0', '0.0', '0.0', 'base_link', 'zed_camera_link'],
+        # ),
+
         # Relays RGB-Depth
         Node(
             package='image_transport', executable='republish', name='republish_rgb',
@@ -197,6 +205,9 @@ def launch_setup(context, *args, **kwargs):
             package='rtabmap_odom', executable='stereo_odometry', name="stereo_odometry", output="screen",
             condition=IfCondition(PythonExpression(["'", LaunchConfiguration('icp_odometry'), "' != 'true' and '", LaunchConfiguration('visual_odometry'), "' == 'true' and '", LaunchConfiguration('stereo'), "' == 'true'"])),
             parameters=[{
+                #2D odom으로 제한 
+                "Odom/2D": True ,
+                #
                 "frame_id": LaunchConfiguration('frame_id'),
                 "odom_frame_id": LaunchConfiguration('vo_frame_id'),
                 "publish_tf": LaunchConfiguration('publish_tf_odom'),
@@ -296,8 +307,13 @@ def launch_setup(context, *args, **kwargs):
                 "scan_normal_k": LaunchConfiguration('scan_normal_k'),
                 "landmark_linear_variance": LaunchConfiguration('tag_linear_variance'),
                 "landmark_angular_variance": LaunchConfiguration('tag_angular_variance'),
-                "Mem/IncrementalMemory": ConditionalText("true", "false", IfCondition(PythonExpression(["'", LaunchConfiguration('localization'), "' != 'true'"]))._predicate_func(context)).perform(context),
-                "Mem/InitWMWithAllNodes": ConditionalText("true", "false", IfCondition(PythonExpression(["'", LaunchConfiguration('localization'), "' == 'true'"]))._predicate_func(context)).perform(context)
+                # "Mem/IncrementalMemory": ConditionalText("true", "false", IfCondition(PythonExpression(["'", LaunchConfiguration('localization'), "' != 'true'"]))._predicate_func(context)).perform(context),
+                # "Mem/InitWMWithAllNodes": ConditionalText("true", "false", IfCondition(PythonExpression(["'", LaunchConfiguration('localization'), "' == 'true'"]))._predicate_func(context)).perform(context)
+                "Mem/IncrementalMemory": "false",
+                "Mem/InitWMWithAllNodes": "true"
+                
+            
+            
             }],
             remappings=[
                 ("map", LaunchConfiguration('map_topic')),
@@ -323,6 +339,10 @@ def launch_setup(context, *args, **kwargs):
             prefix=LaunchConfiguration('launch_prefix'),
             namespace=LaunchConfiguration('namespace')),
 
+        # GPU 가속을 위한 환경 변수 설정
+        SetEnvironmentVariable(name='__NV_PRIME_RENDER_OFFLOAD', value='1'),
+        SetEnvironmentVariable(name='__GLX_VENDOR_LIBRARY_NAME', value='nvidia'),
+        
         Node(
             package='rtabmap_viz', executable='rtabmap_viz', name="rtabmap_viz", output='screen',
             parameters=[{
@@ -362,6 +382,7 @@ def launch_setup(context, *args, **kwargs):
             arguments=[LaunchConfiguration("gui_cfg"), "--ros-args", "--log-level", [LaunchConfiguration('namespace'), '.rtabmap_viz:=', LaunchConfiguration('log_level')], "--log-level", ['rtabmap_viz:=', LaunchConfiguration('log_level')]],
             prefix=LaunchConfiguration('launch_prefix'),
             namespace=LaunchConfiguration('namespace')),
+
         Node(
             package='rviz2', executable='rviz2', name="rviz2", output='screen',
             condition=IfCondition(LaunchConfiguration("rviz")),
@@ -396,11 +417,11 @@ def generate_launch_description():
     return LaunchDescription([
         
         # Arguments
-        DeclareLaunchArgument('stereo', default_value='false', description='Use stereo input instead of RGB-D.'),
+        DeclareLaunchArgument('stereo', default_value='true', description='Use stereo input instead of RGB-D.'),
 
-        DeclareLaunchArgument('localization', default_value='false', description='Launch in localization mode.'),
+        DeclareLaunchArgument('localization', default_value='true', description='Launch in localization mode.'),
         DeclareLaunchArgument('rtabmap_viz',  default_value='true',  description='Launch RTAB-Map UI (optional).'),
-        DeclareLaunchArgument('rviz',         default_value='false', description='Launch RVIZ (optional).'),
+        DeclareLaunchArgument('rviz',         default_value='true', description='Launch RVIZ (optional).'),
 
         DeclareLaunchArgument('use_sim_time', default_value='false', description='Use simulation (Gazebo) clock if true'),
 
@@ -425,15 +446,20 @@ def generate_launch_description():
         DeclareLaunchArgument('rtabmap_args',   default_value='',                   description='Backward compatibility, use "args" instead.'),
         DeclareLaunchArgument('launch_prefix',  default_value='',                   description='For debugging purpose, it fills prefix tag of the nodes, e.g., "xterm -e gdb -ex run --args"'),
         DeclareLaunchArgument('output',         default_value='screen',             description='Control node output (screen or log).'),
-        DeclareLaunchArgument('initial_pose',   default_value='',                   description='Set an initial pose (only in localization mode). Format: "x y z roll pitch yaw" or "x y z qx qy qz qw". Default: see "RGBD/StartAtOrigin" doc'),
-        
+        #DeclareLaunchArgument('initial_pose',   default_value='',                   description='Set an initial pose (only in localization mode). Format: "x y z roll pitch yaw" or "x y z qx qy qz qw". Default: see "RGBD/StartAtOrigin" doc'),
+        # 초기 위치 설정 set initial pose
+        DeclareLaunchArgument(
+            'initial_pose',
+            default_value='0.0 0.0 0.0 0.0 0.0 0.0',
+            description='Set an initial pose (only in localization mode). Format: "x y z roll pitch yaw" or "x y z qx qy qz qw".'
+        ),
         DeclareLaunchArgument('output_goal_topic', default_value='/goal_pose',      description='Output goal topic (can be connected to nav2).'),
         DeclareLaunchArgument('use_action_for_goal', default_value='false',         description='Connect to nav2\'s navigate_to_pose action server instead of publishing the output goal topic.'),
 
         DeclareLaunchArgument('ground_truth_frame_id',      default_value='', description='e.g., "world"'),
         DeclareLaunchArgument('ground_truth_base_frame_id', default_value='', description='e.g., "tracker", a fake frame matching the frame "frame_id" (but on different TF tree)'),
         
-        DeclareLaunchArgument('approx_sync',  default_value='false',            description='If timestamps of the input topics should be synchronized using approximate or exact time policy.'),
+        DeclareLaunchArgument('approx_sync',  default_value='true',            description='If timestamps of the input topics should be synchronized using approximate or exact time policy.'),
         DeclareLaunchArgument('approx_sync_max_interval',  default_value='0.0', description='(sec) 0 means infinite interval duration (used with approx_sync=true)'),
 
         # RGB-D related topics
@@ -442,11 +468,11 @@ def generate_launch_description():
         DeclareLaunchArgument('camera_info_topic',   default_value='/camera/rgb/camera_info',            description=''),
         
         # Stereo related topics
-        DeclareLaunchArgument('stereo_namespace',        default_value='/stereo_camera', description=''),
-        DeclareLaunchArgument('left_image_topic',        default_value=[LaunchConfiguration('stereo_namespace'), '/left/image_rect_color'], description=''),
-        DeclareLaunchArgument('right_image_topic',       default_value=[LaunchConfiguration('stereo_namespace'), '/right/image_rect'], description='Use grayscale image for efficiency'),
-        DeclareLaunchArgument('left_camera_info_topic',  default_value=[LaunchConfiguration('stereo_namespace'), '/left/camera_info'], description=''),
-        DeclareLaunchArgument('right_camera_info_topic', default_value=[LaunchConfiguration('stereo_namespace'), '/right/camera_info'], description=''),
+        DeclareLaunchArgument('stereo_namespace',        default_value='', description=''),
+        DeclareLaunchArgument('left_image_topic',        default_value=[LaunchConfiguration('stereo_namespace'), '/zed/zed_node/left_gray/image_rect_gray'], description=''),
+        DeclareLaunchArgument('right_image_topic',       default_value=[LaunchConfiguration('stereo_namespace'), '/zed/zed_node/right_gray/image_rect_gray'], description='Use grayscale image for efficiency'),
+        DeclareLaunchArgument('left_camera_info_topic',  default_value=[LaunchConfiguration('stereo_namespace'), '/zed/zed_node/left/camera_info'], description=''),
+        DeclareLaunchArgument('right_camera_info_topic', default_value=[LaunchConfiguration('stereo_namespace'), '/zed/zed_node/right/camera_info'], description=''),
         
         # Use Pre-sync RGBDImage format
         DeclareLaunchArgument('rgbd_sync',        default_value='false',      description='Pre-sync rgb_topic, depth_topic, camera_info_topic.'),
@@ -482,11 +508,11 @@ def generate_launch_description():
         DeclareLaunchArgument('odom_guess_min_rotation',    default_value='0.0',   description=''),
         
         # imu
-        DeclareLaunchArgument('imu_topic',        default_value='/imu/data', description='Used with VIO approaches and for SLAM graph optimization (gravity constraints).'),
+        DeclareLaunchArgument('imu_topic',        default_value='/zed/zed_node/imu/data', description='Used with VIO approaches and for SLAM graph optimization (gravity constraints).'),
         DeclareLaunchArgument('wait_imu_to_init', default_value='false',     description=''),
         
         # User Data
-        DeclareLaunchArgument('subscribe_user_data',   default_value='false',            description='User data synchronized subscription.'),
+        DeclareLaunchArgument('subscribe_user_data',   default_value='true',            description='User data synchronized subscription.'),
         DeclareLaunchArgument('user_data_topic',       default_value='/user_data',       description=''),
         DeclareLaunchArgument('user_data_async_topic', default_value='/user_data_async', description='User data async subscription (rate should be lower than map update rate).'),
         
@@ -500,4 +526,3 @@ def generate_launch_description():
         DeclareLaunchArgument('fiducial_topic',       default_value='/fiducial_transforms', description='aruco_detect async subscription, use tag_linear_variance and tag_angular_variance to set covariance.'),
         OpaqueFunction(function=launch_setup)
     ])
-
