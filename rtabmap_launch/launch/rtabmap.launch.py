@@ -420,8 +420,8 @@ def generate_launch_description():
         DeclareLaunchArgument('stereo', default_value='true', description='Use stereo input instead of RGB-D.'),
 
         DeclareLaunchArgument('localization', default_value='true', description='Launch in localization mode.'),
-        DeclareLaunchArgument('rtabmap_viz',  default_value='true',  description='Launch RTAB-Map UI (optional).'),
-        DeclareLaunchArgument('rviz',         default_value='true', description='Launch RVIZ (optional).'),
+        DeclareLaunchArgument('rtabmap_viz',  default_value='false',  description='Launch RTAB-Map UI (optional).'),
+        DeclareLaunchArgument('rviz',         default_value='false', description='Launch RVIZ (optional).'),
 
         DeclareLaunchArgument('use_sim_time', default_value='false', description='Use simulation (Gazebo) clock if true'),
 
@@ -446,7 +446,7 @@ def generate_launch_description():
         DeclareLaunchArgument('rtabmap_args',   default_value='',                   description='Backward compatibility, use "args" instead.'),
         DeclareLaunchArgument('launch_prefix',  default_value='',                   description='For debugging purpose, it fills prefix tag of the nodes, e.g., "xterm -e gdb -ex run --args"'),
         DeclareLaunchArgument('output',         default_value='screen',             description='Control node output (screen or log).'),
-        #DeclareLaunchArgument('initial_pose',   default_value='',                   description='Set an initial pose (only in localization mode). Format: "x y z roll pitch yaw" or "x y z qx qy qz qw". Default: see "RGBD/StartAtOrigin" doc'),
+        # DeclareLaunchArgument('initial_pose',   default_value='',                   description='Set an initial pose (only in localization mode). Format: "x y z roll pitch yaw" or "x y z qx qy qz qw". Default: see "RGBD/StartAtOrigin" doc'),
         # 초기 위치 설정 set initial pose
         DeclareLaunchArgument(
             'initial_pose',
@@ -494,11 +494,11 @@ def generate_launch_description():
         DeclareLaunchArgument('scan_normal_k',        default_value='0',           description=''),
         
         # Odometry
-        DeclareLaunchArgument('visual_odometry',            default_value='true',  description='Launch rtabmap visual odometry node.'),
+        DeclareLaunchArgument('visual_odometry',            default_value='false',  description='Launch rtabmap visual odometry node.'),
         DeclareLaunchArgument('icp_odometry',               default_value='false', description='Launch rtabmap icp odometry node.'),
         DeclareLaunchArgument('odom_topic',                 default_value='odom',  description='Odometry topic name.'),
         DeclareLaunchArgument('vo_frame_id',                default_value=LaunchConfiguration('odom_topic'), description='Visual/Icp odometry frame ID for TF.'),
-        DeclareLaunchArgument('publish_tf_odom',            default_value='true',  description=''),
+        DeclareLaunchArgument('publish_tf_odom',            default_value='false',  description=''),
         DeclareLaunchArgument('odom_tf_angular_variance',   default_value='0.01',    description='If TF is used to get odometry, this is the default angular variance'),
         DeclareLaunchArgument('odom_tf_linear_variance',    default_value='0.001',   description='If TF is used to get odometry, this is the default linear variance'),
         DeclareLaunchArgument('odom_args',                  default_value='',      description='More arguments for odometry (overwrite same parameters in rtabmap_args).'),
