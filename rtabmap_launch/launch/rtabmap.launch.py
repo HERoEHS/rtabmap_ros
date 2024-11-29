@@ -310,7 +310,8 @@ def launch_setup(context, *args, **kwargs):
                 # "Mem/IncrementalMemory": ConditionalText("true", "false", IfCondition(PythonExpression(["'", LaunchConfiguration('localization'), "' != 'true'"]))._predicate_func(context)).perform(context),
                 # "Mem/InitWMWithAllNodes": ConditionalText("true", "false", IfCondition(PythonExpression(["'", LaunchConfiguration('localization'), "' == 'true'"]))._predicate_func(context)).perform(context)
                 "Mem/IncrementalMemory": "false",
-                "Mem/InitWMWithAllNodes": "true"
+                "Mem/InitWMWithAllNodes": "true",
+                "Grid/MaxObstacleHeight": "0.8",
                 
             
             
@@ -419,9 +420,9 @@ def generate_launch_description():
         # Arguments
         DeclareLaunchArgument('stereo', default_value='true', description='Use stereo input instead of RGB-D.'),
 
-        DeclareLaunchArgument('localization', default_value='true', description='Launch in localization mode.'),
-        DeclareLaunchArgument('rtabmap_viz',  default_value='false',  description='Launch RTAB-Map UI (optional).'),
-        DeclareLaunchArgument('rviz',         default_value='false', description='Launch RVIZ (optional).'),
+        DeclareLaunchArgument('localization', default_value='false', description='Launch in localization mode.'),
+        DeclareLaunchArgument('rtabmap_viz',  default_value='true',  description='Launch RTAB-Map UI (optional).'),
+        DeclareLaunchArgument('rviz',         default_value='true', description='Launch RVIZ (optional).'),
 
         DeclareLaunchArgument('use_sim_time', default_value='false', description='Use simulation (Gazebo) clock if true'),
 
@@ -446,13 +447,13 @@ def generate_launch_description():
         DeclareLaunchArgument('rtabmap_args',   default_value='',                   description='Backward compatibility, use "args" instead.'),
         DeclareLaunchArgument('launch_prefix',  default_value='',                   description='For debugging purpose, it fills prefix tag of the nodes, e.g., "xterm -e gdb -ex run --args"'),
         DeclareLaunchArgument('output',         default_value='screen',             description='Control node output (screen or log).'),
-        # DeclareLaunchArgument('initial_pose',   default_value='',                   description='Set an initial pose (only in localization mode). Format: "x y z roll pitch yaw" or "x y z qx qy qz qw". Default: see "RGBD/StartAtOrigin" doc'),
+        DeclareLaunchArgument('initial_pose',   default_value='',                   description='Set an initial pose (only in localization mode). Format: "x y z roll pitch yaw" or "x y z qx qy qz qw". Default: see "RGBD/StartAtOrigin" doc'),
         # 초기 위치 설정 set initial pose
-        DeclareLaunchArgument(
-            'initial_pose',
-            default_value='0.0 0.0 0.0 0.0 0.0 0.0',
-            description='Set an initial pose (only in localization mode). Format: "x y z roll pitch yaw" or "x y z qx qy qz qw".'
-        ),
+        # DeclareLaunchArgument(
+        #     'initial_pose',
+        #     default_value='0.0 0.0 0.0 0.0 0.0 0.0',
+        #     description='Set an initial pose (only in localization mode). Format: "x y z roll pitch yaw" or "x y z qx qy qz qw".'
+        # ),
         DeclareLaunchArgument('output_goal_topic', default_value='/goal_pose',      description='Output goal topic (can be connected to nav2).'),
         DeclareLaunchArgument('use_action_for_goal', default_value='false',         description='Connect to nav2\'s navigate_to_pose action server instead of publishing the output goal topic.'),
 
